@@ -51,7 +51,6 @@ func declarationReturns(declaration: String, kind: SwiftDeclarationKind? = nil) 
     guard let outsideBracesMatch = matchOutsideBraces(declaration) else {
         return false
     }
-
     return outsideBracesMatch.containsString("->")
 }
 
@@ -66,6 +65,12 @@ func matchOutsideBraces(declaration: String) -> NSString? {
     return NSString(string: declaration).substringWithRange(outsideBracesMatch.range)
 }
 
+func declarationIsInitializer(declaration: String) -> Bool {
+    return !regex("^((.+)?\\s+)?init\\?*\\(.*\\)")
+        .matchesInString(declaration, options: [],
+                         range: NSRange(location: 0, length: declaration.characters.count)).isEmpty
+}
+
 func commentHasBatchedParameters(comment: String) -> Bool {
     return comment.lowercaseString.containsString("- parameters:")
 }
@@ -76,11 +81,17 @@ func commentReturns(comment: String) -> Bool {
 }
 
 func missingReturnDocumentation(declaration: String, comment: String) -> Bool {
+    guard !declarationIsInitializer(declaration) else {
+        return false
+    }
     return declarationReturns(declaration) && !commentReturns(comment)
 }
 
 func superfluousReturnDocumentation(declaration: String, comment: String,
                                     kind: SwiftDeclarationKind) -> Bool {
+    guard !declarationIsInitializer(declaration) else {
+        return false
+    }
     return !declarationReturns(declaration, kind: kind) && commentReturns(comment)
 }
 
@@ -182,7 +193,7 @@ public struct ValidDocsRule: ConfigurationProviderRule {
             "/// docs\n/// - throws: NSError\n/// - returns: false" +
                 "\nfunc a() throws -> Bool { return true }",
             "/// docs\n/// - parameter param: this is a closure\n/// - returns: Bool" +
-                "\nfunc a(param: (Void throws -> Bool)) -> Bool { return true }",
+                "\nfunc a(param: (Void throws -> Bool)) -> Bool { return true }"
         ],
         triggeringExamples: [
             "/// docs\npublic ↓func a(param: Void) {}\n",
@@ -212,7 +223,7 @@ public struct ValidDocsRule: ConfigurationProviderRule {
                 "\nfunc a(param: () -> Void) -> Foo<Void> {return Foo<Void>}",
             "/// docs\n/// - parameter param: this is a void closure" +
                 "\nfunc a(param: () -> Void) -> Foo<[Int]> {return Foo<[Int]>}",
-            "/// docs\nfunc a() throws -> Bool { return true }",
+            "/// docs\nfunc a() throws -> Bool { return true }"
         ]
     )
 

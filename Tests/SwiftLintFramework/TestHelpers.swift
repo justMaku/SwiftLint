@@ -23,7 +23,7 @@ func violations(string: String, config: Configuration = Configuration()) -> [Sty
     return Linter(file: file, configuration: config).styleViolations
 }
 
-func cleanedContentsAndMarkerOffsets(from contents: String) -> (String, [Int]) {
+private func cleanedContentsAndMarkerOffsets(from contents: String) -> (String, [Int]) {
     var contents = contents as NSString
     var markerOffsets = [Int]()
     var markerRange = contents.rangeOfString(violationMarker)
@@ -37,11 +37,19 @@ func cleanedContentsAndMarkerOffsets(from contents: String) -> (String, [Int]) {
 
 extension Configuration {
     private func assertCorrection(before: String, expected: String) {
+#if swift(>=2.3)
+        guard let path = NSURL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+            .URLByAppendingPathComponent(NSUUID().UUIDString + ".swift")?.path else {
+                XCTFail("couldn't generate temporary path for assertCorrection()")
+                return
+        }
+#else
         guard let path = NSURL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
             .URLByAppendingPathComponent(NSUUID().UUIDString + ".swift").path else {
                 XCTFail("couldn't generate temporary path for assertCorrection()")
                 return
         }
+#endif
         let (cleanedBefore, markerOffsets) = cleanedContentsAndMarkerOffsets(from: before)
         if cleanedBefore.dataUsingEncoding(NSUTF8StringEncoding)?
             .writeToFile(path, atomically: true) != true {
@@ -81,11 +89,11 @@ extension String {
     }
 }
 
-func makeConfig(ruleConfiguration: AnyObject?, _ identifier: String) -> Configuration? {
+private func makeConfig(ruleConfiguration: AnyObject?, _ identifier: String) -> Configuration? {
     if let ruleConfiguration = ruleConfiguration, ruleType = masterRuleList.list[identifier] {
         // The caller has provided a custom configuration for the rule under test
         return (try? ruleType.init(configuration: ruleConfiguration)).flatMap { configuredRule in
-            return Configuration(configuredRules: [configuredRule])
+            return Configuration(whitelistRules: [identifier], configuredRules: [configuredRule])
         }
     }
     return Configuration(whitelistRules: [identifier])
@@ -125,7 +133,8 @@ extension XCTestCase {
             let expectedLocations = markerOffsets.map { Location(file: file, characterOffset: $0) }
             XCTAssertEqual(triggerViolations.count, expectedLocations.count)
             for (triggerViolation, expectedLocation) in zip(triggerViolations, expectedLocations) {
-                XCTAssertEqual(triggerViolation.location, expectedLocation)
+                XCTAssertEqual(triggerViolation.location, expectedLocation,
+                               "'\(trigger)' violation didn't match expected location.")
             }
         }
         // Triggering examples violate
@@ -151,6 +160,14 @@ extension XCTestCase {
         ruleDescription.corrections.forEach(config.assertCorrection)
         // make sure strings that don't trigger aren't corrected
         zip(nonTriggers, nonTriggers).forEach(config.assertCorrection)
+
+        // "disable" command do not correct
+        ruleDescription.corrections.forEach { before, _ in
+            let beforeDisabled = command + before
+            let expectedCleaned = cleanedContentsAndMarkerOffsets(from: beforeDisabled).0
+            config.assertCorrection(expectedCleaned, expected: expectedCleaned)
+        }
+
     }
 
     func checkError<T: protocol<ErrorType, Equatable>>(error: T, closure: () throws -> () ) {

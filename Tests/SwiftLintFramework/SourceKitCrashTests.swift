@@ -33,6 +33,11 @@ class SourceKitCrashTests: XCTestCase {
         _ = file.syntaxKindsByLines
         XCTAssertFalse(assertHandlerCalled,
                        "Expects assert handler was not called on accessing File.syntaxKindsByLines")
+
+        assertHandlerCalled = false
+        _ = file.syntaxTokensByLines
+        XCTAssertFalse(assertHandlerCalled,
+                      "Expects assert handler was not called on accessing File.syntaxTokensByLines")
     }
 
     func testAssertHandlerIsCalledOnFileThatCrashedSourceKitService() {
@@ -55,6 +60,11 @@ class SourceKitCrashTests: XCTestCase {
         _ = file.syntaxKindsByLines
         XCTAssertTrue(assertHandlerCalled,
                       "Expects assert handler was called on accessing File.syntaxKindsByLines")
+
+        assertHandlerCalled = false
+        _ = file.syntaxTokensByLines
+        XCTAssertTrue(assertHandlerCalled,
+                     "Expects assert handler was not called on accessing File.syntaxTokensByLines")
     }
 
     func testRulesWithFileThatCrashedSourceKitService() {
@@ -64,7 +74,6 @@ class SourceKitCrashTests: XCTestCase {
         file.assertHandler = {
             XCTFail("If this called, rule's SourceKitFreeRule is not properly configured")
         }
-        let allRuleIdentifiers = Array(masterRuleList.list.keys)
         // swiftlint:disable:next force_unwrapping
         let configuration = Configuration(whitelistRules: allRuleIdentifiers)!
         Linter(file: file, configuration: configuration).styleViolations

@@ -24,13 +24,14 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
             "abc(a: \"string\", b: \"string\"",
             "enum a { case a, b, c }",
             "func abc(\n  a: String,  // comment\n  bcd: String // comment\n) {\n}\n",
-            "func abc(\n  a: String,\n  bcd: String\n) {\n}\n",
+            "func abc(\n  a: String,\n  bcd: String\n) {\n}\n"
         ],
         triggeringExamples: [
             "func abc(a: String↓ ,b: String) { }",
+            "func abc(a: String↓ ,b: String↓ ,c: String↓ ,d: String) { }",
             "abc(a: \"string\"↓,b: \"string\"",
             "enum a { case a↓ ,b }",
-            "let result = plus(\n    first: 3↓ , // #683\n    second: 4\n)\n",
+            "let result = plus(\n    first: 3↓ , // #683\n    second: 4\n)\n"
         ],
         corrections: [
             "func abc(a: String,b: String) {}\n": "func abc(a: String, b: String) {}\n",
@@ -38,6 +39,7 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
             "abc(a: \"string\"  ,  b: \"string\"\n": "abc(a: \"string\", b: \"string\"\n",
             "enum a { case a  ,b }\n": "enum a { case a, b }\n",
             "let a = [1,1]\nlet b = 1\nf(1, b)\n": "let a = [1, 1]\nlet b = 1\nf(1, b)\n",
+            "let a = [1↓,1↓,1↓,1]\n": "let a = [1, 1, 1, 1]\n"
         ]
     )
 
@@ -50,26 +52,26 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
     }
 
     public func correctFile(file: File) -> [Correction] {
-        let matches = violationRangesInFile(file)
+        let violations = violationRangesInFile(file)
+        let matches = file.ruleEnabledViolatingRanges(violations, forRule: self)
         if matches.isEmpty { return [] }
 
-        var contents = file.contents as NSString
+        var nsstring = file.contents as NSString
         let description = self.dynamicType.description
         var corrections = [Correction]()
         for range in matches.reverse() {
-            contents = contents.stringByReplacingCharactersInRange(range, withString: ", ")
             let location = Location(file: file, characterOffset: range.location)
+            nsstring = nsstring.stringByReplacingCharactersInRange(range, withString: ", ")
             corrections.append(Correction(ruleDescription: description, location: location))
         }
-
-        file.write(contents as String)
+        file.write(nsstring as String)
         return corrections
     }
 
     // captures spaces and comma only
     // http://userguide.icu-project.org/strings/regexp
-    private static let pattern =
-        "\\S" +                // not whitespace
+
+    private static let mainPatternGroups =
         "(" +                  // start first capure
         "\\s+" +               // followed by whitespace
         "," +                  // to the left of a comma
@@ -80,6 +82,11 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
         "[\\t\\p{Z}]{2,})" +   // or 2+ tab or space characters.
         ")" +                  // end capture
         "(\\S)"                // second capture is not whitespace.
+
+    private static let pattern =
+        "\\S\(mainPatternGroups)" + // Regexp will match if expression not begin with comma
+        "|" +                       // or
+        "\(mainPatternGroups)"      // Regexp will match if expression begins with comma
 
     // swiftlint:disable:next force_try
     private static let regularExpression = try! NSRegularExpression(pattern: pattern, options: [])
@@ -95,10 +102,15 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
         return CommaRule.regularExpression
             .matchesInString(contents, options: [], range: range)
             .flatMap { match -> NSRange? in
-                if match.numberOfRanges != 3 { return nil }
+                if match.numberOfRanges != 5 { return nil } // Number of Groups in regexp
+
+                var indexStartRange = 1
+                if match.rangeAtIndex(indexStartRange).location == NSNotFound {
+                    indexStartRange += 2
+                }
 
                 // check first captured range
-                let firstRange = match.rangeAtIndex(1)
+                let firstRange = match.rangeAtIndex(indexStartRange)
                 guard let matchByteFirstRange = contents
                     .NSRangeToByteRange(start: firstRange.location, length: firstRange.length)
                     else { return nil }
@@ -119,7 +131,7 @@ public struct CommaRule: CorrectableRule, ConfigurationProviderRule {
                 }
 
                 // check second captured range
-                let secondRange = match.rangeAtIndex(2)
+                let secondRange = match.rangeAtIndex(indexStartRange + 1)
                 guard let matchByteSecondRange = contents
                     .NSRangeToByteRange(start: secondRange.location, length: secondRange.length)
                     else { return nil }

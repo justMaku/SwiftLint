@@ -15,6 +15,21 @@ public struct ColonRule: CorrectableRule, ConfigurationProviderRule {
 
     public init() {}
 
+    public var flexibleRightSpacing = false
+
+    public init(configuration: AnyObject) throws {
+        if let severityString = configuration["severity"] as? String {
+            try self.configuration.applyConfiguration(severityString)
+        }
+
+        flexibleRightSpacing = configuration["flexible_right_spacing"] as? Bool == true
+    }
+
+    public var configurationDescription: String {
+        return configuration.consoleDescription +
+            ", flexible_right_spacing: \(flexibleRightSpacing)"
+    }
+
     public static let description = RuleDescription(
         identifier: "colon",
         name: "Colon",
@@ -91,17 +106,17 @@ public struct ColonRule: CorrectableRule, ConfigurationProviderRule {
     }
 
     public func correctFile(file: File) -> [Correction] {
-        let matches = violationRangesInFile(file, withPattern: pattern)
+        let violations = violationRangesInFile(file, withPattern: pattern)
+        let matches = file.ruleEnabledViolatingRanges(violations, forRule: self)
         guard !matches.isEmpty else { return [] }
-
         let regularExpression = regex(pattern)
         let description = self.dynamicType.description
         var corrections = [Correction]()
         var contents = file.contents
         for range in matches.reverse() {
+            let location = Location(file: file, characterOffset: range.location)
             contents = regularExpression.stringByReplacingMatchesInString(contents,
                 options: [], range: range, withTemplate: "$1: $2")
-            let location = Location(file: file, characterOffset: range.location)
             corrections.append(Correction(ruleDescription: description, location: location))
         }
         file.write(contents)
@@ -110,32 +125,37 @@ public struct ColonRule: CorrectableRule, ConfigurationProviderRule {
 
     // MARK: - Private
 
-    private let pattern =
-        "(\\w)" +              // Capture an identifier
-        "(?:" +                // start group
-        "\\s+" +               // followed by whitespace
-        ":" +                  // to the left of a colon
-        "\\s*" +               // followed by any amount of whitespace.
-        "|" +                  // or
-        ":" +                  // immediately followed by a colon
-        "(?:\\s{0}|\\s{2,})" + // followed by 0 or 2+ whitespace characters.
-        ")" +                  // end group
-        "(" +                  // Capture a type identifier
-        "[\\[|\\(]*" +         // which may begin with a series of nested parenthesis or brackets
-        "\\S)"                 // lazily to the first non-whitespace character.
+    private var pattern: String {
+        // If flexible_right_spacing is true, match only 0 whitespaces.
+        // If flexible_right_spacing is false or omitted, match 0 or 2+ whitespaces.
+        let spacingRegex = flexibleRightSpacing ? "(?:\\s{0})" : "(?:\\s{0}|\\s{2,})"
+
+        return  "(\\w)" +       // Capture an identifier
+                "(?:" +         // start group
+                "\\s+" +        // followed by whitespace
+                ":" +           // to the left of a colon
+                "\\s*" +        // followed by any amount of whitespace.
+                "|" +           // or
+                ":" +           // immediately followed by a colon
+                spacingRegex +  // followed by right spacing regex
+                ")" +           // end group
+                "(" +           // Capture a type identifier
+                "[\\[|\\(]*" +  // which may begin with a series of nested parenthesis or brackets
+                "\\S)"          // lazily to the first non-whitespace character.
+    }
 
     private func violationRangesInFile(file: File, withPattern pattern: String) -> [NSRange] {
         let nsstring = file.contents as NSString
         let commentAndStringKindsSet = Set(SyntaxKind.commentAndStringKinds())
         return file.rangesAndTokensMatching(pattern).filter { range, syntaxTokens in
-            let syntaxKinds = syntaxTokens.map({ $0.type }).flatMap(SyntaxKind.init)
+            let syntaxKinds = syntaxTokens.flatMap { SyntaxKind(rawValue: $0.type) }
             if !syntaxKinds.startsWith([.Identifier, .Typeidentifier]) {
                 return false
             }
             return Set(syntaxKinds).intersect(commentAndStringKindsSet).isEmpty
         }.flatMap { range, syntaxTokens in
-            let identifierRange = nsstring // swiftlint:disable:next force_unwrapping
-                .byteRangeToNSRange(start: syntaxTokens.first!.offset, length: 0)
+            let identifierRange = nsstring
+                .byteRangeToNSRange(start: syntaxTokens[0].offset, length: 0)
             return identifierRange.map { NSUnionRange($0, range) }
         }
     }

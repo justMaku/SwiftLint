@@ -26,8 +26,9 @@ private var structureCache = Cache({file -> Structure? in
     }
     return nil
 })
-private var syntaxMapCache = Cache({file in responseCache.get(file).map(SyntaxMap.init)})
-private var syntaxKindsByLinesCache = Cache({file in file.syntaxKindsByLine()})
+private var syntaxMapCache = Cache({ file in responseCache.get(file).map(SyntaxMap.init) })
+private var syntaxKindsByLinesCache = Cache({ file in file.syntaxKindsByLine() })
+private var syntaxTokensByLinesCache = Cache({ file in file.syntaxTokensByLine() })
 
 private typealias AssertHandler = () -> ()
 private var assertHandlers = [String: AssertHandler?]()
@@ -68,7 +69,7 @@ private struct Cache<T> {
 extension File {
 
     private var cacheKey: String {
-        return path ?? "\(ObjectIdentifier(self).hashValue)"
+        return path ?? contents
     }
 
     internal var sourcekitdFailed: Bool {
@@ -77,7 +78,8 @@ extension File {
         }
         set {
             if newValue {
-                responseCache.values[cacheKey] = Optional<[String: SourceKitRepresentable]>.None
+                let value: [String: SourceKitRepresentable]? = nil
+                responseCache.values[cacheKey] = value
             } else {
                 responseCache.values.removeValueForKey(cacheKey)
             }
@@ -115,6 +117,17 @@ extension File {
         return syntaxMap
     }
 
+    internal var syntaxTokensByLines: [[SyntaxToken]] {
+        guard let syntaxTokensByLines = syntaxTokensByLinesCache.get(self) else {
+            if let handler = assertHandler {
+                handler()
+                return []
+            }
+            fatalError("Never call this for file that sourcekitd fails.")
+        }
+        return syntaxTokensByLines
+    }
+
     internal var syntaxKindsByLines: [[SyntaxKind]] {
         guard let syntaxKindsByLines = syntaxKindsByLinesCache.get(self) else {
             if let handler = assertHandler {
@@ -131,6 +144,7 @@ extension File {
         assertHandlers.removeValueForKey(cacheKey)
         structureCache.invalidate(self)
         syntaxMapCache.invalidate(self)
+        syntaxTokensByLinesCache.invalidate(self)
         syntaxKindsByLinesCache.invalidate(self)
     }
 
@@ -141,6 +155,7 @@ extension File {
         assertHandlers = [:]
         structureCache.clear()
         syntaxMapCache.clear()
+        syntaxTokensByLinesCache.clear()
         syntaxKindsByLinesCache.clear()
     }
 
@@ -150,14 +165,6 @@ extension File {
         }
         return _allDeclarationsByType
     }
-}
-
-private func dictFromKeyValuePairs<Key: Hashable, Value>(pairs: [(Key, Value)]) -> [Key: Value] {
-    var dict = [Key: Value]()
-    for pair in pairs {
-        dict[pair.0] = pair.1
-    }
-    return dict
 }
 
 private func substructureForDict(dict: [String: SourceKitRepresentable]) ->

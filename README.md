@@ -30,7 +30,7 @@ You can also install SwiftLint by downloading `SwiftLint.pkg` from the
 running it.
 
 You can also build from source by cloning this project and running
-`git submodule update --init --recursive; make install` (Xcode 7.1).
+`git submodule update --init --recursive; make install` (Xcode 7.1 or later).
 
 ## Usage
 
@@ -53,6 +53,13 @@ fi
 
 To run `swiftlint autocorrect` on save in Xcode, install the
 [SwiftLintXcode](https://github.com/ypresto/SwiftLintXcode) plugin from Alcatraz.
+
+### AppCode
+
+To integrate SwiftLint with AppCode, install
+[this plugin](https://plugins.jetbrains.com/plugin/9175) and configure
+SwiftLint's installed path in the plugin's preferences.
+The `autocorrect` action is available via `⌥⏎`.
 
 ### Atom
 
@@ -90,8 +97,8 @@ These are same environment variables set for input files to
 ## Rules
 
 There are only a small number of rules currently implemented, but we hope the
-Swift community (that's you!) will contribute more over time. Pull requests are
-encouraged.
+Swift community (that's you!) will contribute more over time.
+[Pull requests](CONTRIBUTING.md) are encouraged.
 
 The rules that *are* currently implemented are mostly there as a starting point
 and are subject to change.
@@ -99,17 +106,27 @@ and are subject to change.
 See the [Source/SwiftLintFramework/Rules](Source/SwiftLintFramework/Rules)
 directory to see the currently implemented rules.
 
-### Disable a rule in code
+`opt_in_rules` are disabled by default (you have to explicitly enable them in
+your configuration file).
+
+Guidelines on when to implement a rule as opt-in:
+
+* A rule that can have many false positives (e.g. `empty_count`)
+* A rule that is too slow
+* A rule that is not general consensus or only useful in some cases
+  (e.g. `force_unwrapping`, `missing_docs`)
+
+### Disable rules in code
 
 Rules can be disabled with a comment inside a source file with the following
 format:
 
-`// swiftlint:disable <rule>`
+`// swiftlint:disable <rule1> [<rule2> <rule3>...]`
 
-The rule will be disabled until the end of the file or until the linter sees a
+The rules will be disabled until the end of the file or until the linter sees a
 matching enable comment:
 
-`// swiftlint:enable <rule>`
+`// swiftlint:enable <rule1> [<rule2> <rule3>...]`
 
 For example:
 
@@ -200,7 +217,7 @@ variable_name:
     - id
     - URL
     - GlobalAPIKey
-reporter: "xcode" # reporter type (xcode, json, csv, checkstyle)
+reporter: "xcode" # reporter type (xcode, json, csv, checkstyle, junit)
 ```
 
 #### Defining Custom Rules
@@ -211,7 +228,7 @@ following syntax:
 ```yaml
 custom_rules:
   pirates_beat_ninjas: # rule identifier
-    included: "*.swift" # regex that defines paths to include during linting. optional.
+    included: ".*.swift" # regex that defines paths to include during linting. optional.
     name: "Pirates Beat Ninjas" # rule name. optional.
     regex: "([n,N]inja)" # matching pattern
     match_kinds: # SyntaxKinds to match. optional.

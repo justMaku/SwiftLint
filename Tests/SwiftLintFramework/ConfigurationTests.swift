@@ -53,6 +53,16 @@ class ConfigurationTests: XCTestCase {
         XCTAssertEqual(whitelist, configuredIdentifiers)
     }
 
+    func testWarningThreshold_value() {
+        let config = Configuration(dict: ["warning_threshold": 5])!
+        XCTAssertEqual(config.warningThreshold, 5)
+    }
+
+    func testWarningThreshold_nil() {
+        let config = Configuration(dict: [:])!
+        XCTAssertEqual(config.warningThreshold, nil)
+    }
+
     func testOtherRuleConfigurationsAlongsideWhitelistRules() {
         let whitelist = ["nesting", "todo"]
         let enabledRulesConfigDict = [
@@ -109,7 +119,7 @@ class ConfigurationTests: XCTestCase {
     }
 
     private class TestFileManager: NSFileManager {
-        private override func filesToLintAtPath(path: String) -> [String] {
+        override func filesToLintAtPath(path: String, rootDirectory: String? = nil) -> [String] {
             switch path {
             case "directory": return ["directory/File1.swift", "directory/File2.swift",
                                       "directory/excluded/Excluded.swift",
@@ -185,8 +195,7 @@ class ConfigurationTests: XCTestCase {
         let ruleConfiguration = [1, 2]
         let config = [RuleWithLevelsMock.description.identifier: ruleConfiguration]
         let rules = testRuleList.configuredRulesWithDictionary(config)
-        // swiftlint:disable:next force_try
-        XCTAssertTrue(rules == [try! RuleWithLevelsMock(configuration: ruleConfiguration) as Rule])
+        XCTAssertTrue(rules == [try RuleWithLevelsMock(configuration: ruleConfiguration) as Rule])
     }
 
     func testConfigureFallsBackCorrectly() {

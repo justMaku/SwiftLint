@@ -43,7 +43,7 @@ extension File {
         guard let _ = (dictionary["key.kind"] as? String).flatMap(SwiftDeclarationKind.init),
             offset = dictionary["key.offset"] as? Int64,
             accessibility = dictionary["key.accessibility"] as? String
-            where acl.map({ $0.sourcekitValue() }).contains(accessibility) else {
+            where acl.map({ $0.rawValue }).contains(accessibility) else {
                 return substructureOffsets
         }
         if getDocumentationCommentBody(dictionary, syntaxMap: syntaxMap) != nil {
@@ -53,18 +53,43 @@ extension File {
     }
 }
 
-public enum AccessControlLevel: String {
-    case Private = "private"
-    case Internal = "internal"
-    case Public = "public"
+public enum AccessControlLevel: String, CustomStringConvertible {
+    case Private = "source.lang.swift.accessibility.private"
+    case FilePrivate = "source.lang.swift.accessibility.fileprivate"
+    case Internal = "source.lang.swift.accessibility.internal"
+    case Public = "source.lang.swift.accessibility.public"
+    case Open = "source.lang.swift.accessibility.open"
 
-    private func sourcekitValue() -> String {
-        switch self {
-        case Private: return "source.lang.swift.accessibility.private"
-        case Internal: return "source.lang.swift.accessibility.internal"
-        case Public: return "source.lang.swift.accessibility.public"
+    internal init?(description value: String) {
+        switch value {
+        case "private": self = .Private
+        case "fileprivate": self = .FilePrivate
+        case "internal": self = .Internal
+        case "public": self = .Public
+        case "open": self = .Open
+        default: return nil
         }
     }
+
+    init?(identifier value: String) {
+        self.init(rawValue: value)
+    }
+
+    public var description: String {
+        switch self {
+        case Private: return "private"
+        case FilePrivate: return "fileprivate"
+        case Internal: return "internal"
+        case Public: return "public"
+        case Open: return "open"
+        }
+    }
+
+    // Returns true if is `private` or `fileprivate`
+    var isPrivate: Bool {
+        return self == .Private || self == .FilePrivate
+    }
+
 }
 
 public struct MissingDocsRule: OptInRule {
@@ -72,7 +97,7 @@ public struct MissingDocsRule: OptInRule {
         guard let array = [String].arrayOf(configuration) else {
             throw ConfigurationError.UnknownConfiguration
         }
-        let acl = array.flatMap(AccessControlLevel.init)
+        let acl = array.flatMap(AccessControlLevel.init(description:))
         parameters = zip([.Warning, .Error], acl).map(RuleParameter<AccessControlLevel>.init)
     }
 
@@ -83,7 +108,8 @@ public struct MissingDocsRule: OptInRule {
     }
 
     public init() {
-        parameters = [RuleParameter(severity: .Warning, value: .Public)]
+        parameters = [RuleParameter(severity: .Warning, value: .Public),
+                      RuleParameter(severity: .Warning, value: .Open)]
     }
 
     public let parameters: [RuleParameter<AccessControlLevel>]
@@ -140,7 +166,7 @@ public struct MissingDocsRule: OptInRule {
 
     public func isEqualTo(rule: Rule) -> Bool {
         if let rule = rule as? MissingDocsRule {
-            return rule.parameters == self.parameters
+            return rule.parameters == parameters
         }
         return false
     }

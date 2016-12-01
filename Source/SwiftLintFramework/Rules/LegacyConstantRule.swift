@@ -24,6 +24,9 @@ public struct LegacyConstantRule: CorrectableRule, ConfigurationProviderRule {
             "CGPoint.zero",
             "CGRect.zero",
             "CGSize.zero",
+            "NSPoint.zero",
+            "NSRect.zero",
+            "NSSize.zero",
             "CGRect.null"
         ],
         triggeringExamples: [
@@ -31,6 +34,9 @@ public struct LegacyConstantRule: CorrectableRule, ConfigurationProviderRule {
             "↓CGPointZero",
             "↓CGRectZero",
             "↓CGSizeZero",
+            "↓NSZeroPoint",
+            "↓NSZeroRect",
+            "↓NSZeroSize",
             "↓CGRectNull"
         ],
         corrections: [
@@ -38,13 +44,16 @@ public struct LegacyConstantRule: CorrectableRule, ConfigurationProviderRule {
             "↓CGPointZero\n": "CGPoint.zero\n",
             "↓CGRectZero\n": "CGRect.zero\n",
             "↓CGSizeZero\n": "CGSize.zero\n",
+            "↓NSZeroPoint\n": "NSPoint.zero\n",
+            "↓NSZeroRect\n": "NSRect.zero\n",
+            "↓NSZeroSize\n": "NSSize.zero\n",
             "↓CGRectInfinite\n↓CGRectNull\n": "CGRect.infinite\nCGRect.null\n"
         ]
     )
 
     public func validateFile(file: File) -> [StyleViolation] {
         let constants = ["CGRectInfinite", "CGPointZero", "CGRectZero", "CGSizeZero",
-                         "CGRectNull"]
+                         "NSZeroPoint", "NSZeroRect", "NSZeroSize", "CGRectNull"]
 
         let pattern = "\\b(" + constants.joinWithSeparator("|") + ")\\b"
 
@@ -61,24 +70,29 @@ public struct LegacyConstantRule: CorrectableRule, ConfigurationProviderRule {
             "CGPointZero": "CGPoint.zero",
             "CGRectZero": "CGRect.zero",
             "CGSizeZero": "CGSize.zero",
+            "NSZeroPoint": "NSPoint.zero",
+            "NSZeroRect": "NSRect.zero",
+            "NSZeroSize": "NSSize.zero",
             "CGRectNull": "CGRect.null"
         ]
 
         let description = self.dynamicType.description
         var corrections = [Correction]()
         var contents = file.contents
-
         let matches = patterns.map({ pattern, template in
             file.matchPattern(pattern, withSyntaxKinds: [.Identifier])
+                .filter { !file.ruleEnabledViolatingRanges([$0], forRule: self).isEmpty }
                 .map { ($0, pattern, template) }
         }).flatten().sort { $0.0.location > $1.0.location } // reversed
 
+        if matches.isEmpty { return [] }
+
         for (range, pattern, template) in matches {
+            let location = Location(file: file, characterOffset: range.location)
             contents = regex(pattern).stringByReplacingMatchesInString(contents,
                                                                        options: [],
                                                                        range: range,
                                                                        withTemplate: template)
-            let location = Location(file: file, characterOffset: range.location)
             corrections.append(Correction(ruleDescription: description, location: location))
         }
 

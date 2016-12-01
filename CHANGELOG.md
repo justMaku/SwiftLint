@@ -6,15 +6,314 @@
 
 ##### Enhancements
 
+* None.
+
+##### Bug Fixes
+
+* None.
+
+## 0.13.2: Light Cycle
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* `TrailingCommaRule` now only triggers when a declaration is multi-line
+  when using `mandatory_comma: true`.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#910](https://github.com/realm/SwiftLint/issues/910)
+  [#911](https://github.com/realm/SwiftLint/issues/911)
+
+##### Bug Fixes
+
+* Fix `MarkRule` reporting a violation for `// MARK: -`, which is valid.  
+  [JP Simard](https://github.com/jpsim)
+  [#778](https://github.com/realm/SwiftLint/issues/778)
+
+## 0.13.1: Heavy Cycle
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* Add `ImplicitGetterRule` to warn against using `get` on computed read-only
+  properties.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#57](https://github.com/realm/SwiftLint/issues/57)
+
+* Add `WeakDelegateRule` rule to enforce delegate instance variables to be
+  marked as `weak`.  
+  [Olivier Halligon](https://github.com/AliSoftware)
+
+* Add `SyntacticSugar` rule that enforces that shorthanded syntax should be
+  used when possible, for example `[Int]` instead of `Array<Int>`.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#319](https://github.com/realm/SwiftLint/issues/319)
+
+* Allow specifying multiple rule identifiers in comment commands. For example,
+  `// swiftlint:disable:next force_cast force_try`. Works with all command types
+  (`disable`/`enable`) and modifiers (`next`, `this`, `previous` or blank).  
+  [JP Simard](https://github.com/jpsim)
+  [#861](https://github.com/realm/SwiftLint/issues/861)
+
+* Add `NimbleOperatorRule` opt-in rule that enforces using
+  [operator overloads](https://github.com/Quick/Nimble/#operator-overloads)
+  instead of free matcher functions when using
+  [Nimble](https://github.com/Quick/Nimble).  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#881](https://github.com/realm/SwiftLint/issues/881)
+
+* `closure_spacing` rule now accepts empty bodies with a space.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#875](https://github.com/realm/SwiftLint/issues/875)
+
+* Add `TrailingCommaRule` to enforce/forbid trailing commas in arrays and
+  dictionaries. The default is to forbid them, but this can be changed with
+  the `mandatory_comma` configuration.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#883](https://github.com/realm/SwiftLint/issues/883)
+
+* Add support for `fileprivate` in `PrivateOutletRule` and
+  `PrivateUnitTestRule`.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#781](https://github.com/realm/SwiftLint/issues/781)
+  [#831](https://github.com/realm/SwiftLint/issues/831)
+
+* Make `MarkRule` correctable.  
+  [kohtenko](https://github.com/kohtenko)
+
+##### Bug Fixes
+
+* Rule out a few invalid `@IBInspectable` cases in `valid_ibinspectable`.  
+  [Daniel Duan](https://github.com/dduan)
+
+* Fix a few edge cases where malformed `MARK:` comments wouldn't trigger a
+  violation.  
+  [JP Simard](https://github.com/jpsim)
+  [#805](https://github.com/realm/SwiftLint/issues/805)
+
+* Now lints single files passed to `--path` even if this file is excluded
+  from the configuration file (`.swiftlint.yml`).  
+  [JP Simard](https://github.com/jpsim)
+
+* Fixed error severity configuration in `colon` rule.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#863](https://github.com/realm/SwiftLint/issues/863)
+
+* `switch_case_on_newline` rule should ignore trailing comments.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#874](https://github.com/realm/SwiftLint/issues/874)
+
+* `switch_case_on_newline` rule shouldn't trigger on enums.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#878](https://github.com/realm/SwiftLint/issues/878)
+
+* Fix regex bug in Comma Rule causing some violations to not be triggered
+  when there were consecutive violations in the same expression.  
+  [Savio Figueiredo](https://github.com/sadefigu)
+  [#872](https://github.com/realm/SwiftLint/issues/872)
+
+## 0.13.0: MakeYourClothesCleanAgain
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* Add `ignores_comment` configuration for `trailing_whitespace` rule.  
+  [Javier Hernández](https://github.com/jaherhi)
+  [#576](https://github.com/realm/SwiftLint/issues/576)
+
+* Added HTML reporter, identifier is `html`.  
+  [Johnykutty Mathew](https://github.com/Johnykutty)
+
+* Add `SuperCallRule` opt-in rule that warns about methods not calling to super.  
+  [Angel G. Olloqui](https://github.com/angelolloqui)
+  [#803](https://github.com/realm/SwiftLint/issues/803)
+
+* Add `RedundantNilCoalesingRule` opt-in rule that warns against `?? nil`.  
+  [Daniel Beard](https://github.com/daniel-beard)
+  [#764](https://github.com/realm/SwiftLint/issues/764)
+
+* Added opt-in rule to makes closure expressions spacing consistent.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#770](https://github.com/realm/SwiftLint/issues/770)
+
+* Adds `allow_private_set` configuration for the `private_outlet` rule.  
+  [Rohan Dhaimade](https://github.com/HaloZero)
+
+* Swift 2.3 support.  
+  [Norio Nomura](https://github.com/norio-nomura),
+  [Syo Ikeda](https://github.com/ikesyo)
+
+* Color literals count as single characters to avoid unintentional line length
+  violations.  
+  [Jonas](https://github.com/VFUC)
+  [#742](https://github.com/realm/SwiftLint/issues/742)
+
+* Add `SwitchCaseOnNewlineRule` opt-in rule that enforces a newline after
+  `case pattern:` in a `switch`.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#681](https://github.com/realm/SwiftLint/issues/681)
+
+* Add `ValidIBInspectableRule` rule that checks if `@IBInspectable` declarations
+  are valid. An `@IBInspectable` is valid if:
+  * It's declared as a `var` (not `let`)
+  * Its type is explicit (not inferred)
+  * Its type is one of the
+  [supported types](http://help.apple.com/xcode/mac/8.0/#/devf60c1c514)  
+
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#756](https://github.com/realm/SwiftLint/issues/756)
+
+* Add `ExplicitInitRule` opt-in rule to discourage calling `init` directly.  
+  [Matt Taube](https://github.com/mtaube)
+  [#715](https://github.com/realm/SwiftLint/pull/715)
+
+##### Bug Fixes
+
+* Fixed whitespace being added to TODO messages.  
+  [W. Bagdon](https://github.com/wbagdon)
+  [#792](https://github.com/realm/SwiftLint/issues/792)
+
+* Fixed regex bug in Vertical Whitespace Rule by using SourceKitten instead.
+  The rule now enabled by default again (no longer opt-in).  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#772](https://github.com/realm/SwiftLint/issues/772)
+
+* Correctable rules no longer apply corrections if the rule is locally disabled.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)  
+  [#601](https://github.com/realm/SwiftLint/issues/601)
+
+* Fixed regex bug in Mark Rule where MARK could not be used with only a hyphen
+  but no descriptive text: `// MARK: -`.  
+  [Ruotger Deecke](https://github.com/roddi)
+  [#778](https://github.com/realm/SwiftLint/issues/778)
+
+* Fixed: Private unit test rule not scoped to test classes.  
+  Fixed: Private unit test rule config is ignored if regex is missing.  
+  [Cristian Filipov](https://github.com/cfilipov)
+  [#786](https://github.com/realm/SwiftLint/issues/786)
+
+* Fixed: `ConditionalReturnsOnNewline` now respects severity configuration.  
+  [Rohan Dhaimade](https://github.com/HaloZero)
+  [#783](https://github.com/realm/SwiftLint/issues/783)
+
+* Fixed: `ConditionalReturnsOnNewline` now checks if `return` is a keyword,
+  avoiding false positives.  
+  [Marcelo Fabri](https://github.com/marcelofabri)
+  [#784](https://github.com/realm/SwiftLint/issues/784)
+
+* `ForceUnwrappingRule` did not recognize force unwraps in return statements
+  using subscript.  
+  [Norio Nomura](https://github.com/norio-nomura)
+  [#813](https://github.com/realm/SwiftLint/issues/813)  
+
+## 0.12.0: Vertical Laundry
+
+##### Breaking
+
+* Fixed: SwiftLint assumes paths in the YAML config file are relative to the
+  current directory even when `--path` is passed as an argument.  
+  [Cristian Filipov](https://github.com/cfilipov)
+
+##### Enhancements
+
+* None.
+
+##### Bug Fixes
+
+* Made Vertical Whitespace Rule added in 0.11.2 opt-in due to performance
+  issues.  
+  [JP Simard](https://github.com/jpsim)
+  [#772](https://github.com/realm/SwiftLint/issues/772)
+
+## 0.11.2: Communal Clothesline
+
+This release has seen a phenomenal uptake in community contributions!
+
+##### Breaking
+
+* None.
+
+##### Enhancements
+
+* Add `MarkRule` rule to enforce `// MARK` syntax.  
+  [Krzysztof Rodak](https://github.com/krodak)
+  [#749](https://github.com/realm/SwiftLint/issues/749)
+
+* Add `PrivateOutletRule` opt-in rule to enforce `@IBOutlet`
+  instance variables to be `private`.  
+  [Olivier Halligon](https://github.com/AliSoftware)
+
+* Add content of the todo statement to message.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#478](https://github.com/realm/SwiftLint/issues/478)
+
+* Add `LegacyNSGeometryFunctionsRule` rule. Add `NSSize`, `NSPoint`, and
+  `NSRect` constants and constructors to existing rules.  
+  [David Rönnqvist](https://github.com/d-ronnqvist)
+
+* Added Vertical Whitespace Rule.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#548](https://github.com/realm/SwiftLint/issues/548)
+
+* Removed ConditionalBindingCascadeRule.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#701](https://github.com/realm/SwiftLint/issues/701)
+
+* Allow setting `flexible_right_spacing` configuration for the `colon` rule.  
+  [Shai Mishali](https://github.com/freak4pc)
+  [#730](https://github.com/realm/SwiftLint/issues/730)
+
+* Add Junit reporter.  
+  [Matthew Ellis](https://github.com/matthewellis)
+
+* LeadingWhitespaceRule is now auto correctable.  
+  [masters3d](https://github.com/masters3d)
+
 * Add included regex for custom rules to control what files are processed.  
   [bootstraponline](https://github.com/bootstraponline)
   [#689](https://github.com/realm/SwiftLint/issues/689)
 
+* Add rule to check for private unit tests (private unit tests don't get run
+  by XCTest).  
+  [Cristian Filipov](https://github.com/cfilipov)
+
+* Add configuration for setting a warning threshold.  
+  [woodhamgh](https://github.com/woodhamgh)
+  [696](https://github.com/realm/SwiftLint/issues/696)
+
+* Adds 'ConditionalReturnsOnNewLineRule' rule.  
+  [Rohan Dhaimade](https://github.com/HaloZero)
+
+* Made `- returns:` doc optional for initializers.  
+  [Mohpor](https://github.com/mohpor)
+  [#557](https://github.com/realm/SwiftLint/issues/557)
+
 ##### Bug Fixes
 
+* Fixed CustomRule Regex.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#717](https://github.com/realm/SwiftLint/issues/717)
+  [#726](https://github.com/realm/SwiftLint/issues/726)
+
+* Allow disabling custom rules in code.  
+  [J. Cheyo Jimenez](https://github.com/masters3d)
+  [#515](https://github.com/realm/SwiftLint/issues/515)
+
 * Fix LegacyConstructorRule when using variables instead of numbers.  
-  [Sarr Blaise](https://github.com/bsarr007) 
-  [#646](https://github.com/realm/SwiftLint/issues/646) 
+  [Sarr Blaise](https://github.com/bsarr007)
+  [#646](https://github.com/realm/SwiftLint/issues/646)
+
+* Fix force_unwrapping false positive inside strings.  
+  [Daniel Beard](https://github.com/daniel-beard)
+  [#721](https://github.com/realm/SwiftLint/issues/721)
 
 ## 0.11.1: Cuddles... Or Else!
 
@@ -35,7 +334,7 @@
 ##### Bug Fixes
 
 * Remove extraneous argument label added in LegacyCGGeometryFunctionsRule
-  autocorrect. 
+  autocorrect.  
   [Sarr Blaise](https://github.com/bsarr007)
   [643](https://github.com/realm/SwiftLint/issues/643)
 
@@ -674,7 +973,7 @@
 
 * Add `autocorrect` command to automatically correct certain violations
   (currently only `trailing_newline`, `trailing_semicolon` &
-  `trailing_whitespace`).
+  `trailing_whitespace`).  
   [JP Simard](https://github.com/jpsim)
   [#5](https://github.com/realm/SwiftLint/issues/5)
 
